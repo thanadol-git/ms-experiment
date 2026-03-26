@@ -4,6 +4,8 @@ import uuid
 
 import streamlit as st
 
+from func.plate_plot import PLATE_CONFIGS
+
 SERVER_URL = "https://hypha.aicell.io"
 
 try:
@@ -50,6 +52,35 @@ def design_plate(plate_design_str: str) -> str:
     The input string should be formatted as 'Label;Location' separated by newlines.
     Example: 'Pool;A7,A8,A12\\nControl;G12\\nEMPTY;A1\\nCohort_2;RowD\\nCohort_2;Col9'
     """
+    plate_type = st.session_state.get("plate_type", "96-well")
+    config = PLATE_CONFIGS[plate_type]
+    rows = config["rows"]
+    n_cols = config["n_cols"]
+    valid_rows = "".join(rows)
+
+    invalid = []
+    for line in plate_design_str.strip().split("\n"):
+        if ";" not in line:
+            continue
+        _, pos = line.split(";", 1)
+        for p in [p.strip() for p in pos.split(",") if p.strip()]:
+            if p.startswith("Row"):
+                if not (len(p) == 4 and p[-1] in valid_rows):
+                    invalid.append(p)
+            elif p.startswith("Col"):
+                if not (p[3:].isdigit() and 1 <= int(p[3:]) <= n_cols):
+                    invalid.append(p)
+            else:
+                if not (len(p) >= 2 and p[0] in valid_rows and p[1:].isdigit() and 1 <= int(p[1:]) <= n_cols):
+                    invalid.append(p)
+
+    if invalid:
+        return (
+            f"Invalid positions for {plate_type}: {', '.join(invalid)}. "
+            f"Valid rows: {rows[0]}–{rows[-1]}, columns: 1–{n_cols}. "
+            "Please correct and try again."
+        )
+
     st.session_state["pending_plate_update"] = plate_design_str
     return "Successfully updated plate design."
 
@@ -60,19 +91,36 @@ async def run_open_ai_agent(prompt: str, api_key: str) -> None:
         st.error("OpenAI library not installed.")
         return
 
+    plate_type = st.session_state.get("plate_type", "96-well")
+    config = PLATE_CONFIGS[plate_type]
+    rows = config["rows"]
+    n_cols = config["n_cols"]
+
     client = AsyncOpenAI(api_key=api_key)
     openai_tools = [
         {
             "type": "function",
             "function": {
                 "name": "design_plate",
-                "description": "Design a plate by setting the replacement positions text.",
+                "description": (
+                    f"Design a {plate_type} plate (rows {rows[0]}–{rows[-1]}, columns 1–{n_cols}) "
+                    "by setting the replacement positions text. "
+                    f"Valid row shorthand: RowA–Row{rows[-1]}. "
+                    f"Valid col shorthand: Col1–Col{n_cols}. "
+                    "Comma-separated positions are allowed, e.g. 'Pool;A1,A3,A5'."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "plate_design_str": {
                             "type": "string",
-                            "description": "The input string formatted as 'Label;Location' separated by newlines.",
+                            "description": (
+                                "Newline-separated entries formatted as 'Label;Position'. "
+                                f"Rows: {rows[0]}–{rows[-1]}, Columns: 1–{n_cols}. "
+                                "Supports single positions (A1), comma lists (A1,A3), "
+                                f"row shorthand (RowA–Row{rows[-1]}), "
+                                f"and col shorthand (Col1–Col{n_cols})."
+                            ),
                         }
                     },
                     "required": ["plate_design_str"],
@@ -85,8 +133,11 @@ async def run_open_ai_agent(prompt: str, api_key: str) -> None:
         {
             "role": "system",
             "content": (
-                "You are a helpful assistant that can modify plate designs. "
-                f"The current plate design replace_pos text is:\n{st.session_state.replace_pos_text}"
+                f"You are a helpful assistant that designs {plate_type} plates for mass spectrometry experiments.\n"
+                f"Plate format: {plate_type} — rows {rows[0]} to {rows[-1]} ({len(rows)} rows), "
+                f"columns 1 to {n_cols} ({n_cols} columns), total {len(rows) * n_cols} wells.\n"
+                f"Position format: 'Label;Position' (e.g. Pool;A1 or Cohort_2;RowA or Control;Col{n_cols}).\n"
+                f"The current plate design is:\n{st.session_state.replace_pos_text}"
             ),
         },
         {"role": "user", "content": prompt},
