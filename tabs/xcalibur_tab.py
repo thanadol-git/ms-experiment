@@ -158,14 +158,6 @@ def render(ms_info: dict, sample_info: dict) -> None:
 
     csv_data = ensure_bom("Bracket Type=4,,,,\n" + output_with_wash.to_csv(index=False, encoding="utf-8-sig"))
 
-    st.markdown(
-        "The data below is an example for sample order in Xcalibur. "
-        "The injection order will be randomized and added with wash and qc standard. "
-        "Be sure with SRM injection."
-    )
-    st.write(output_order_rand)
-    st.markdown("Click below to download the data.")
-
     filename = build_download_name(
         [
             datetime.now().strftime("%Y%m%d%H%M"),
@@ -176,6 +168,16 @@ def render(ms_info: dict, sample_info: dict) -> None:
         ],
         ".csv",
     )
+    st.session_state.dl_xcalibur = (csv_data.encode("utf-8"), filename)
+
+    st.markdown(
+        "The data below is an example for sample order in Xcalibur. "
+        "The injection order will be randomized and added with wash and qc standard. "
+        "Be sure with SRM injection."
+    )
+    st.write(output_order_rand)
+    st.markdown("Click below to download the data.")
+
     st.download_button(
         label="Download sample order",
         data=csv_data.encode("utf-8-sig"),

@@ -71,5 +71,6 @@ def render(ms_info: dict, sample_info: dict) -> None:
     plate_df_long = plate_dfplot(plate_df, sample_info["plate_id"])
     st.session_state.plate_df_long = plate_df_long
     st.session_state.plate_type = plate_type
+    st.session_state.dl_plate_csv = plate_df_long.to_csv(index=False).encode("utf-8-sig")
 
     create_agent_chat()

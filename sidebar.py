@@ -1,3 +1,6 @@
+import io
+import zipfile
+
 import streamlit as st
 
 
@@ -105,8 +108,48 @@ def ms_info() -> dict:
     }
 
 
+def _download_all_button(sample_info: dict) -> None:
+    """Sidebar button that zips all available results into one file."""
+    st.sidebar.divider()
+    st.sidebar.subheader("Download All")
+
+    # Collect files: {zip_path: bytes}
+    files = {}
+
+    if "dl_plate_heatmap" in st.session_state:
+        files["plate_heatmap.png"] = st.session_state.dl_plate_heatmap
+    if "dl_plate_count" in st.session_state:
+        files["sample_count.png"] = st.session_state.dl_plate_count
+    if "dl_plate_csv" in st.session_state:
+        files["plate_layout.csv"] = st.session_state.dl_plate_csv
+    for key in ("dl_xcalibur", "dl_chronos_csv", "dl_chronos_xml", "dl_sdrf", "dl_skyline"):
+        if key in st.session_state:
+            data, name = st.session_state[key]
+            files[name] = data
+
+    if not files:
+        st.sidebar.caption("Complete the Plate Design tab to enable download.")
+        return
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for name, data in files.items():
+            zf.writestr(name, data)
+
+    zip_name = f"{sample_info['proj_name']}_{sample_info['plate_id']}_results.zip"
+    st.sidebar.download_button(
+        label=f"⬇️ Download All ({len(files)} files)",
+        data=buf.getvalue(),
+        file_name=zip_name,
+        mime="application/zip",
+    )
+
+
 def create_sidebar() -> tuple:
     st.sidebar.image("images/logo.png")
     st.sidebar.header("Sample information")
     st.sidebar.write("This part is needed for every file that we are creating.")
-    return ms_info(), sample_info()
+    ms = ms_info()
+    sample = sample_info()
+    _download_all_button(sample)
+    return ms, sample

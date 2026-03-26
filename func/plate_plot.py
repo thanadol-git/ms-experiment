@@ -1,3 +1,5 @@
+import io
+
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -51,6 +53,10 @@ def plate_dfplot(plate_df, plate_id):
 
     ax.set_yticklabels(plate_df.index, rotation=0)
     st.pyplot(fig)
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
+    st.session_state.dl_plate_heatmap = buf.getvalue()
+    plt.close(fig)
 
     fig2, ax2 = plt.subplots()
     sns.countplot(
@@ -71,6 +77,10 @@ def plate_dfplot(plate_df, plate_id):
             ha="center", va="center", fontsize=10, color="black",
         )
     st.pyplot(fig2)
+    buf2 = io.BytesIO()
+    fig2.savefig(buf2, format="png", dpi=150, bbox_inches="tight")
+    st.session_state.dl_plate_count = buf2.getvalue()
+    plt.close(fig2)
 
     return plate_df_long
 
