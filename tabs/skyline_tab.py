@@ -50,9 +50,12 @@ def render(ms_info: dict, sample_info: dict) -> None:
         ],
         ".csv",
     )
+    skyline_csv_bytes = skyline_anno.to_csv(index=False).encode("utf-8")
+    st.session_state.dl_skyline = (skyline_csv_bytes, filename)
+
     st.download_button(
         label="Download Skyline Annotation",
-        data=skyline_anno.to_csv(index=False, encoding="utf-8").encode("utf-8"),
+        data=skyline_csv_bytes,
         file_name=filename,
         mime="text/csv; charset=utf-8",
     )

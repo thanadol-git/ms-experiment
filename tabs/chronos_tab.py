@@ -179,19 +179,24 @@ def _download_section(df: pd.DataFrame, sample_info: dict) -> None:
     xml_df.columns = sanitize_xml_columns(xml_df.columns)
     xml_data = create_xml_from_dataframe(xml_df)
 
+    csv_name = build_download_name(base_parts, ".csv")
+    xml_name = build_download_name(base_parts, ".xml")
+    st.session_state.dl_chronos_csv = (csv_data.encode("utf-8"), csv_name)
+    st.session_state.dl_chronos_xml = (xml_data.encode("utf-8"), xml_name)
+
     col1, col2, col3 = st.columns(3)
     with col1:
         st.download_button(
             label="⬇️ Download CSV",
             data=csv_data.encode("utf-8-sig"),
-            file_name=build_download_name(base_parts, ".csv"),
+            file_name=csv_name,
             mime="text/csv; charset=utf-8; separator=semicolon",
         )
     with col2:
         st.download_button(
             label="⬇️ Download XML",
             data=xml_data.encode("utf-8"),
-            file_name=build_download_name(base_parts, ".xml"),
+            file_name=xml_name,
             mime="application/xml",
         )
     with col3:
