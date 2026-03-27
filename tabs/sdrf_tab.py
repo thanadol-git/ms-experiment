@@ -47,10 +47,6 @@ def render(ms_info: dict, sample_info: dict) -> None:
     st.subheader("Edit your SDRF data here:")
     sdrf_df = st.data_editor(sdrf_df, use_container_width=True)
 
-    # Save for Skyline tab and Download All
-    st.session_state.sdrf_df = sdrf_df
-    st.session_state.dl_sdrf = (sdrf_tsv.encode("utf-8"), sdrf_filename)
-
     sdrf_filename = build_download_name(
         [datetime.now().strftime("%Y%m%d"), sample_info["proj_name"], sample_info["plate_id"]],
         ".sdrf.tsv",
@@ -60,6 +56,10 @@ def render(ms_info: dict, sample_info: dict) -> None:
         sdrf_tsv = sdrf_tsv.replace(
             f"comment[cleavage agent details{i}]", "comment[cleavage agent details]"
         )
+
+    # Save for Skyline tab and Download All
+    st.session_state.sdrf_df = sdrf_df
+    st.session_state.dl_sdrf = (sdrf_tsv.encode("utf-8"), sdrf_filename)
 
     st.download_button(
         label="Download SDRF",

@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import streamlit as st
 
 
@@ -25,57 +26,138 @@ def create_plate_df_long(plate_df):
     return long_format
 
 
-def plate_dfplot(plate_df, plate_id):
-    plate_df_long = create_plate_df_long(plate_df)
-
-    unique_labels = sorted(plate_df_long["Sample"].unique())
-    custom_palette = dict(zip(unique_labels, sns.color_palette("colorblind", len(unique_labels))))
-
+def _draw_plate(plate_df, plate_id, ax):
+    """Draw a realistic microplate layout on the given axes."""
     n_rows, n_cols = plate_df.shape
-    figsize = (max(12, n_cols * 0.7), max(6, n_rows * 0.6))
-    font_size = 3 if n_cols > 12 else 4
+    rows = list(plate_df.index)
 
-    fig, ax = plt.subplots(figsize=figsize)
-    sns.heatmap(
-        plate_df.isnull(), cbar=False, cmap="coolwarm",
-        ax=ax, linewidths=1, linecolor="darkgrey", alpha=0.1,
+    is_384 = n_cols > 12
+    well_spacing = 1.0
+    well_radius = 0.46
+    margin_left = 1.2
+    margin_top = 1.0
+    margin_right = 0.8
+    margin_bottom = 0.8
+
+    plate_w = margin_left + n_cols * well_spacing + margin_right
+    plate_h = margin_top + n_rows * well_spacing + margin_bottom
+
+    ax.set_xlim(-0.2, plate_w + 0.2)
+    ax.set_ylim(-0.2, plate_h + 0.2)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+    # Plate body
+    plate_rect = mpatches.FancyBboxPatch(
+        (0, 0), plate_w, plate_h,
+        boxstyle="round,pad=0.25",
+        linewidth=2.5, edgecolor="#555555", facecolor="white", zorder=0,
     )
-    ax.xaxis.tick_top()
-    ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
-    ax.set_title(plate_id)
+    ax.add_patch(plate_rect)
 
+    unique_labels = sorted(plate_df.stack().unique())
+    palette = dict(zip(unique_labels, sns.color_palette("colorblind", len(unique_labels))))
+
+    # Auto-scale font size based on the longest label so text fits inside wells
+    max_len = max(len(str(v)) for v in plate_df.values.flatten())
+    label_fs = max(3, min(6, 30 // max_len)) if is_384 else max(4, min(9, 42 // max_len))
+    tick_fs = 6 if is_384 else 9
+
+    # Column numbers (top)
+    for j in range(n_cols):
+        cx = margin_left + j * well_spacing + well_spacing / 2
+        cy = plate_h - margin_top / 2
+        ax.text(cx, cy, str(j + 1), ha="center", va="center",
+                fontsize=tick_fs, fontweight="bold", color="#333333")
+
+    # Row letters (left)
+    for i, row_label in enumerate(rows):
+        cx = margin_left / 2
+        cy = plate_h - margin_top - i * well_spacing - well_spacing / 2
+        ax.text(cx, cy, row_label, ha="center", va="center",
+                fontsize=tick_fs, fontweight="bold", color="#333333")
+
+    # Wells
     for i in range(n_rows):
         for j in range(n_cols):
             value = plate_df.iloc[i, j]
-            color = custom_palette.get(value, (1, 1, 1))
-            ax.add_patch(plt.Circle((j + 0.5, i + 0.5), 0.4, color=color, fill=True))
-            ax.text(j + 0.5, i + 0.5, str(value), ha="center", va="center", color="white", fontsize=font_size)
+            color = palette.get(value, (1, 1, 1))
+            cx = margin_left + j * well_spacing + well_spacing / 2
+            cy = plate_h - margin_top - i * well_spacing - well_spacing / 2
 
-    ax.set_yticklabels(plate_df.index, rotation=0)
+            # Outer ring (gives a slight depth / shadow effect)
+            ax.add_patch(plt.Circle((cx, cy), well_radius, color="#bbbbbb", zorder=1))
+            # Well fill
+            ax.add_patch(plt.Circle((cx, cy), well_radius * 0.94, color=color, zorder=2))
+
+            # Label text inside well
+            ax.text(cx, cy, str(value), ha="center", va="center",
+                    color="white", fontsize=label_fs, zorder=3,
+                    fontweight="bold")
+
+    # Legend — placed to the right of the plate
+    legend_handles = [
+        mpatches.Patch(facecolor=palette[lbl], edgecolor="#555555", label=lbl)
+        for lbl in unique_labels
+    ]
+    ax.legend(
+        handles=legend_handles,
+        loc="center left",
+        bbox_to_anchor=(1.01, 0.5),
+        bbox_transform=ax.transAxes,
+        ncol=1,
+        fontsize=label_fs + 2,
+        framealpha=0.85,
+        title=plate_id,
+        title_fontsize=label_fs + 3,
+    )
+
+
+def plate_dfplot(plate_df, plate_id):
+    plate_df_long = create_plate_df_long(plate_df)
+
+    n_rows, n_cols = plate_df.shape
+    is_384 = n_cols > 12
+
+    # Figure size: real plates are ~3:2 aspect; scale wells for density
+    well_inch = 0.42 if is_384 else 0.72
+    fig_w = n_cols * well_inch + 2.0
+    fig_h = n_rows * well_inch + 2.0
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h), facecolor="white")
+
+    _draw_plate(plate_df, plate_id, ax)
+
+    fig.subplots_adjust(right=0.78)
     st.pyplot(fig)
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
     st.session_state.dl_plate_heatmap = buf.getvalue()
     plt.close(fig)
 
-    fig2, ax2 = plt.subplots()
+    # Count plot
+    unique_labels = sorted(plate_df_long["Sample"].unique())
+    palette = dict(zip(unique_labels, sns.color_palette("colorblind", len(unique_labels))))
+
+    order = plate_df_long["Sample"].value_counts().sort_values().index
+    fig2, ax2 = plt.subplots(figsize=(5, max(3, len(unique_labels) * 0.6)))
     sns.countplot(
         data=plate_df_long,
-        x="Sample",
+        y="Sample",
         ax=ax2,
-        order=plate_df_long["Sample"].value_counts().index,
-        palette=custom_palette,
+        order=order,
+        palette=palette,
     )
-    ax2.set_title(f"Sample count in plate {plate_id}")
-    ax2.set_xlabel(None)
-    ax2.set_ylabel("Count")
+    ax2.set_title(f"Sample count — {plate_id}")
+    ax2.set_xlabel("Count")
+    ax2.set_ylabel(None)
     for p in ax2.patches:
         ax2.text(
-            p.get_x() + p.get_width() / 2.0,
-            p.get_height() + 1,
-            int(p.get_height()),
-            ha="center", va="center", fontsize=10, color="black",
+            p.get_width() + 0.3,
+            p.get_y() + p.get_height() / 2.0,
+            int(p.get_width()),
+            ha="left", va="center", fontsize=10, color="black",
         )
+    fig2.tight_layout()
     st.pyplot(fig2)
     buf2 = io.BytesIO()
     fig2.savefig(buf2, format="png", dpi=150, bbox_inches="tight")

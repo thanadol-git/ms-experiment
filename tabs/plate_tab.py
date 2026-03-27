@@ -35,6 +35,7 @@ def render(ms_info: dict, sample_info: dict) -> None:
         ["96-well", "384-well"],
         horizontal=True,
         help="96-well: rows A–H, columns 1–12 | 384-well: rows A–P, columns 1–24",
+        key="settings_plate_type",
     )
 
     # Reset example text when plate type changes
