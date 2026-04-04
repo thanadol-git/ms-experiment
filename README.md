@@ -277,10 +277,13 @@ See `requirements.txt`. Key packages:
 | Package | Purpose |
 |---|---|
 | `streamlit` | Web framework |
-| `pandas` / `numpy` | Data handling |
+| `pandas` | Data handling |
 | `matplotlib` / `seaborn` | Plate layout and count visualizations |
-| `openpyxl` | Excel support |
+| `plotly` | Interactive charts |
+| `mitosheet` | Spreadsheet-style data editor |
+| `sdrf-pipelines` | SDRF validation (`parse_sdrf validate-sdrf`) |
 | `hypha-rpc` | AI plate generation agent (optional, requires OpenAI API key) |
+| `openai` | OpenAI API client for AI agent |
 
 ---
 
