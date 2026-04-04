@@ -20,23 +20,36 @@ def render(ms_info: dict, sample_info: dict) -> None:
     st.header("Plate layout")
 
     st.subheader("A. Cohort name")
-    st.markdown(
-        f"The main cohort samples will be: <span style='color:red'>{sample_info['sample_name']}</span>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f"Plate ID: <span style='color:red'>{sample_info['plate_id']}</span>",
-        unsafe_allow_html=True,
-    )
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(label="Main Cohort", value=sample_info["sample_name"])
+    with col2:
+        st.metric(label="Plate ID", value=sample_info["plate_id"])
 
     # Plate format selection
-    plate_type = st.radio(
-        "Select plate format",
-        ["96-well", "384-well"],
-        horizontal=True,
-        help="96-well: rows A–H, columns 1–12 | 384-well: rows A–P, columns 1–24",
-        key="settings_plate_type",
-    )
+    st.markdown("**Select plate format**")
+    if "settings_plate_type" not in st.session_state:
+        st.session_state.settings_plate_type = "96-well"
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button(
+            "96-well",
+            use_container_width=True,
+            type="primary" if st.session_state.settings_plate_type == "96-well" else "secondary",
+        ):
+            st.session_state.settings_plate_type = "96-well"
+            st.rerun()
+    with col2:
+        if st.button(
+            "384-well",
+            use_container_width=True,
+            type="primary" if st.session_state.settings_plate_type == "384-well" else "secondary",
+        ):
+            st.session_state.settings_plate_type = "384-well"
+            st.rerun()
+
+    plate_type = st.session_state.settings_plate_type
 
     # Reset example text when plate type changes
     if st.session_state.get("_last_plate_type") != plate_type:
