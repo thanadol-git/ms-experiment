@@ -2,6 +2,7 @@ import subprocess
 import sys
 import tempfile
 import os
+import shutil
 from datetime import datetime
 
 import pandas as pd
@@ -71,7 +72,10 @@ def render(ms_info: dict, sample_info: dict) -> None:
             tmp_path = tmp.name
             tmp.write(sdrf_tsv)
         try:
-            parse_sdrf_bin = os.path.join(os.path.dirname(sys.executable), "parse_sdrf")
+            parse_sdrf_bin = (
+                shutil.which("parse_sdrf")
+                or os.path.join(os.path.dirname(sys.executable), "parse_sdrf")
+            )
             result = subprocess.run(
                 [parse_sdrf_bin, "validate-sdrf", "--sdrf_file", tmp_path, "--skip-ontology"],
                 capture_output=True,
@@ -79,6 +83,8 @@ def render(ms_info: dict, sample_info: dict) -> None:
             )
             output = result.stdout + result.stderr
             st.code(output if output.strip() else "(no output)", language="text")
+        except FileNotFoundError:
+            st.error("`parse_sdrf` not found. Please install sdrf-pipelines: `pip install sdrf-pipelines`")
         finally:
             os.unlink(tmp_path)
 
