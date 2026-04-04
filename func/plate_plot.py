@@ -57,6 +57,8 @@ def _draw_plate(plate_df, plate_id, ax):
 
     unique_labels = sorted(plate_df.stack().unique())
     palette = dict(zip(unique_labels, sns.color_palette("colorblind", len(unique_labels))))
+    if "EMPTY" in palette:
+        palette["EMPTY"] = (1.0, 1.0, 1.0)
 
     # Auto-scale font size based on the longest label so text fits inside wells
     max_len = max(len(str(v)) for v in plate_df.values.flatten())
