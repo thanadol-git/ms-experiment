@@ -85,14 +85,19 @@ def _draw_plate(plate_df, plate_id, ax):
             cx = margin_left + j * well_spacing + well_spacing / 2
             cy = plate_h - margin_top - i * well_spacing - well_spacing / 2
 
+            is_empty = str(value) == "EMPTY"
+            ring_color = "#dddddd" if is_empty else "#bbbbbb"
+            fill_color = "white" if is_empty else color
+            text_color = "black" if is_empty else "white"
+
             # Outer ring (gives a slight depth / shadow effect)
-            ax.add_patch(plt.Circle((cx, cy), well_radius, color="#bbbbbb", zorder=1))
+            ax.add_patch(plt.Circle((cx, cy), well_radius, color=ring_color, zorder=1))
             # Well fill
-            ax.add_patch(plt.Circle((cx, cy), well_radius * 0.94, color=color, zorder=2))
+            ax.add_patch(plt.Circle((cx, cy), well_radius * 0.94, color=fill_color, zorder=2))
 
             # Label text inside well
             ax.text(cx, cy, str(value), ha="center", va="center",
-                    color="white", fontsize=label_fs, zorder=3,
+                    color=text_color, fontsize=label_fs, zorder=3,
                     fontweight="bold")
 
     # Legend — placed to the right of the plate
@@ -137,6 +142,8 @@ def plate_dfplot(plate_df, plate_id):
     # Count plot
     unique_labels = sorted(plate_df_long["Sample"].unique())
     palette = dict(zip(unique_labels, sns.color_palette("colorblind", len(unique_labels))))
+    if "EMPTY" in palette:
+        palette["EMPTY"] = "white"
 
     order = plate_df_long["Sample"].value_counts().sort_values().index
     fig2, ax2 = plt.subplots(figsize=(5, max(3, len(unique_labels) * 0.6)))
@@ -147,6 +154,9 @@ def plate_dfplot(plate_df, plate_id):
         order=order,
         palette=palette,
     )
+    for p in ax2.patches:
+        p.set_edgecolor("black")
+        p.set_linewidth(0.8)
     ax2.set_title(f"Sample count — {plate_id}")
     ax2.set_xlabel("Count")
     ax2.set_ylabel(None)
