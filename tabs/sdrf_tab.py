@@ -1,3 +1,7 @@
+import subprocess
+import sys
+import tempfile
+import os
 from datetime import datetime
 
 import pandas as pd
@@ -16,7 +20,7 @@ SAMPLE_TO_PART = {
 def render(ms_info: dict, sample_info: dict) -> None:
     st.header("SDRF")
 
-    ms_file = st.selectbox("MS file output", ["raw", "mzML"])
+    ms_file = st.selectbox("MS file output", ["mzML", "raw"])
     collision_energy = st.text_input("Collision Energy (NCE)", "27")
 
     output_order_df = st.session_state.get("output_order_df")
@@ -61,6 +65,24 @@ def render(ms_info: dict, sample_info: dict) -> None:
     st.session_state.sdrf_df = sdrf_df
     st.session_state.dl_sdrf = (sdrf_tsv.encode("utf-8"), sdrf_filename)
 
+    st.subheader("Step 1: Validate SDRF")
+    if st.button("Validate before download"):
+        with tempfile.NamedTemporaryFile(suffix=".sdrf.tsv", delete=False, mode="w", encoding="utf-8") as tmp:
+            tmp_path = tmp.name
+            tmp.write(sdrf_tsv)
+        try:
+            parse_sdrf_bin = os.path.join(os.path.dirname(sys.executable), "parse_sdrf")
+            result = subprocess.run(
+                [parse_sdrf_bin, "validate-sdrf", "--sdrf_file", tmp_path, "--skip-ontology"],
+                capture_output=True,
+                text=True,
+            )
+            output = result.stdout + result.stderr
+            st.code(output if output.strip() else "(no output)", language="text")
+        finally:
+            os.unlink(tmp_path)
+
+    st.subheader("Step 2: Download SDRF")
     st.download_button(
         label="Download SDRF",
         data=sdrf_tsv.encode("utf-8"),
