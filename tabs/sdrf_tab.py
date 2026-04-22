@@ -169,7 +169,7 @@ def _build_data_file_prop(ms_info: dict, output_order_df: pd.DataFrame, ms_file:
         df["MS1 scan range"] = "400-1250 m/z"
         df["MS2 scan range"] = "100-2000 m/z"
     if ms_info["acq_tech"] in ["SRM", "PRM"]:
-        df["ProteomeEdge"] = ms_info["srm_lot"]
+        df["ProteomEdge"] = ms_info["srm_lot"]
 
     df.columns = "comment[" + df.columns + "]"
     return df
