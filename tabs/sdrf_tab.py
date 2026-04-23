@@ -126,7 +126,34 @@ def render(ms_info: dict, sample_info: dict) -> None:
         # Summarize colnames
         colnames = {name: df.columns.tolist() for name, df in sdrf_dfs}
         with st.expander("Show SDRF file column names"):
-            st.table(pd.DataFrame.from_dict(colnames, orient='index').transpose())
+            colnames_df = pd.DataFrame.from_dict(colnames, orient='index').transpose()
+
+            def row_text_colorizer(row):
+                # If only one unique non-null value in the row, color all green
+                non_nulls = [x for x in row if pd.notnull(x)]
+                if len(set(non_nulls)) == 1 and non_nulls:
+                    # all cells have the same text
+                    return [f'color: #228B22;' if pd.notnull(x) else '' for x in row]
+                else:
+                    # color by text (unique per text)
+                    unique_vals = {val: i for i, val in enumerate(pd.unique([x for x in row if pd.notnull(x)]))}
+                    base_colors = [
+                        "#006400", "#1E90FF", "#32CD32", "#FFD700", "#FF4500",
+                        "#9400D3", "#FF69B4", "#FFA500", "#2E8B57", "#DC143C",
+                        "#20B2AA", "#FA8072", "#6A5ACD", "#008B8B", "#B22222"
+                    ]
+               
+                    color_map = []
+                    for val in row:
+                        if pd.isnull(val):
+                            color_map.append('')
+                        else:
+                            color_map.append(f'color: {base_colors[unique_vals[val] % len(base_colors)]};')
+                    return color_map
+
+            styled = colnames_df.style.apply(row_text_colorizer, axis=1)
+            st.dataframe(styled, use_container_width=True)
+     
    
 
     # # Button to download all SDRF files after combining
