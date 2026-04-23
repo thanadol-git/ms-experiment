@@ -1,6 +1,6 @@
 # Folders 
 data
-env
+.venv
 __pycache__
 
 # Files
