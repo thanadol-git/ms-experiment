@@ -103,6 +103,53 @@ def render(ms_info: dict, sample_info: dict) -> None:
         "check out this [link](%s)" % url
     )
 
+    st.subheader("Step 3: Combine in project SDRF")
+    st.markdown("Special function to concatenate multiple SDRF files into one project SDRF file.")
+    # Upload multiple SDRF files        
+    sdrf_files = st.file_uploader("Upload multiple SDRF files", type=["sdrf.tsv", "tsv"], accept_multiple_files=True)
+    
+    
+    def _summarise_colnames(sdrf_files: list[pd.DataFrame]) -> dict:
+        """Summarise the column names of the uploaded SDRF files."""
+        colnames = {}
+        for sdrf_file in sdrf_files:
+            colnames[sdrf_file.name] = sdrf_file.columns
+        return colnames
+
+    if sdrf_files:
+        # Convert UploadedFile objects to (name, DataFrame) tuples
+        sdrf_dfs = []
+        for f in sdrf_files:
+            df = pd.read_csv(f, sep="\t")
+            sdrf_dfs.append((f.name, df))
+
+        # Summarize colnames
+        colnames = {name: df.columns.tolist() for name, df in sdrf_dfs}
+        with st.expander("Show SDRF file column names"):
+            st.table(pd.DataFrame.from_dict(colnames, orient='index').transpose())
+   
+
+    # # Button to download all SDRF files after combining
+    # if st.button("Download all SDRF files after combining"):
+    #     # Combine all SDRF files into one project SDRF file
+    #     project_sdrf_df = pd.concat(sdrf_dfs, ignore_index=True)
+    #     project_sdrf_df.columns = "characteristics[" + project_sdrf_df.columns + "]"
+    #     project_sdrf_df.insert(0, "source name", project_sdrf_df["File Name"])
+    #     project_sdrf_df["Material type"] = "AC=EFO:0009656;NT=plasma"
+    #     project_sdrf_df["assay name"] = [f"run {i}" for i in range(1, n + 1)]
+    #     project_sdrf_df["technology type"] = "proteomic profiling by mass spectrometry"
+    #     # Download project SDRF file
+    #     project_sdrf_filename = build_download_name(
+    #         [datetime.now().strftime("%Y%m%d"), sample_info["proj_name"], sample_info["plate_id"]],
+    #         ".sdrf.tsv",
+    #     )
+    #     project_sdrf_tsv = ensure_bom(project_sdrf_df.to_csv(sep="\t", index=False, encoding="utf-8-sig"))
+    #     st.download_button(
+    #         label="Download project SDRF",
+    #         data=project_sdrf_tsv.encode("utf-8"),
+    #         file_name=project_sdrf_filename,
+    #         mime="text/tab-separated-values; charset=utf-8",
+    #     )
 
 def _get_filtered_plate_df() -> pd.DataFrame:
     """Return plate DataFrame with EMPTY wells removed."""
