@@ -126,29 +126,60 @@ def plate_dfplot(plate_df, plate_id):
     n_rows, n_cols = plate_df.shape
     is_384 = n_cols > 12
 
-    # Figure size: real plates are ~3:2 aspect; scale wells for density
+    # --- Sizing and palette ---
     well_inch = 0.42 if is_384 else 0.72
     fig_w = n_cols * well_inch + 2.0
     fig_h = n_rows * well_inch + 2.0
-    fig, ax = plt.subplots(figsize=(fig_w, fig_h), facecolor="white")
 
+    label_fs = 10
+    title_fs = 14
+
+    # --- Main plate figure ---
+    unique_labels = sorted(plate_df_long["Sample"].unique())
+    palette = dict(
+        zip(unique_labels, sns.color_palette("colorblind", len(unique_labels)))
+    )
+    if "EMPTY" in palette:
+        palette["EMPTY"] = "white"
+
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h), facecolor="white")
     _draw_plate(plate_df, plate_id, ax)
 
-    fig.subplots_adjust(right=0.78)
+    # Add plate_id as title, and move the legend to the left
+    ax.set_title(f"{plate_id}", fontsize=title_fs, fontweight="bold")
+
+    # Legend — placed to the left of the plate
+    import matplotlib.patches as mpatches
+    legend_handles = [
+        mpatches.Patch(facecolor=palette[lbl], edgecolor="#555555", label=lbl)
+        for lbl in unique_labels
+    ]
+    # Adjust to put the legend to the left
+    ax.legend(
+        handles=legend_handles,
+        loc="center right",
+        bbox_to_anchor=(-0.18, 0.5),
+        bbox_transform=ax.transAxes,
+        ncol=1,
+        fontsize=label_fs + 2,
+        framealpha=0.85,
+        title=plate_id,
+        title_fontsize=label_fs + 3,
+    )
+
+    fig.subplots_adjust(left=0.25, right=0.98)
     st.pyplot(fig)
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
     st.session_state.dl_plate_heatmap = buf.getvalue()
     plt.close(fig)
 
-    # Count plot
-    unique_labels = sorted(plate_df_long["Sample"].unique())
-    palette = dict(zip(unique_labels, sns.color_palette("colorblind", len(unique_labels))))
-    if "EMPTY" in palette:
-        palette["EMPTY"] = "white"
-
+    # --- Count plot ---
     order = plate_df_long["Sample"].value_counts().sort_values().index
-    fig2, ax2 = plt.subplots(figsize=(5, max(3, len(unique_labels) * 0.6)))
+    fig2, ax2 = plt.subplots(
+        figsize=(5, max(3, len(unique_labels) * 0.6))
+    )
+
     sns.countplot(
         data=plate_df_long,
         y="Sample",
