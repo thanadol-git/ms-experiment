@@ -130,7 +130,7 @@ def _build_sample_prop(plate_df: pd.DataFrame, sample_info: dict, output_order_d
 
     df.columns = "characteristics[" + df.columns + "]"
     df.insert(0, "source name", output_order_df["File Name"].values)
-    df["Material type"] = "AC=EFO:0009656;NT=plasma"
+    df["Material type"] = sample_info["sample"].lower()
     df["assay name"] = [f"run {i}" for i in range(1, n + 1)]
     df["technology type"] = "proteomic profiling by mass spectrometry"
     return df
