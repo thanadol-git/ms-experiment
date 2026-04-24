@@ -163,6 +163,7 @@ async def run_open_ai_agent(prompt: str, api_key: str) -> None:
         st.write(message.content)
 
 
+@st.fragment
 def create_agent_chat() -> None:
     """Render the AI agent chat interface for plate design."""
     api_key = st.text_input("OpenAI API Key", type="password")

@@ -39,7 +39,6 @@ def render(ms_info: dict, sample_info: dict) -> None:
             type="primary" if st.session_state.settings_plate_type == "96-well" else "secondary",
         ):
             st.session_state.settings_plate_type = "96-well"
-            st.rerun()
     with col2:
         if st.button(
             "384-well",
@@ -47,7 +46,6 @@ def render(ms_info: dict, sample_info: dict) -> None:
             type="primary" if st.session_state.settings_plate_type == "384-well" else "secondary",
         ):
             st.session_state.settings_plate_type = "384-well"
-            st.rerun()
 
     plate_type = st.session_state.settings_plate_type
 
