@@ -51,7 +51,7 @@ def design_plate(plate_design_str: str) -> str:
     The input string should be formatted as 'Label;Location' separated by newlines.
     Example: 'Pool;A7,A8,A12\\nControl;G12\\nEMPTY;A1\\nCohort_2;RowD\\nCohort_2;Col9'
     """
-    plate_type = st.session_state.get("plate_type", "96-well")
+    plate_type = st.session_state.get("settings_plate_type", "96-well")
     config = PLATE_CONFIGS[plate_type]
     rows = config["rows"]
     n_cols = config["n_cols"]
@@ -90,7 +90,7 @@ async def run_open_ai_agent(prompt: str, api_key: str) -> None:
         st.error("OpenAI library not installed.")
         return
 
-    plate_type = st.session_state.get("plate_type", "96-well")
+    plate_type = st.session_state.get("settings_plate_type", "96-well")
     config = PLATE_CONFIGS[plate_type]
     rows = config["rows"]
     n_cols = config["n_cols"]
@@ -158,7 +158,7 @@ async def run_open_ai_agent(prompt: str, api_key: str) -> None:
             st.info(f"Agent calling tool: `{function_name}` with args: `{arguments}`")
             if function_name == "design_plate":
                 st.success(design_plate(**arguments))
-                st.rerun()
+                st.rerun(scope="app")
     else:
         st.write(message.content)
 
