@@ -35,15 +35,24 @@ def render(ms_info: dict, sample_info: dict) -> None:
     )
 
     # 2. Injection volume
-    injection_vol = st.slider("2. Select your injection volume", 0.01, 20.0, 0.1, 0.01)
+    if "xcal_injection_vol" not in st.session_state:
+        st.session_state["xcal_injection_vol"] = 0.1
+
     vol_col, text_col = st.columns(2)
     with vol_col:
+        st.markdown("**Quick select (ul)**")
         btns = st.columns(5)
         for btn_col, vol in zip(btns, [0.01, 0.1, 5.0, 10.0, 15.0]):
-            if btn_col.button(f"{vol} ul", use_container_width=True):
-                injection_vol = vol
+            if btn_col.button(f"{vol}", use_container_width=True):
+                st.session_state["xcal_injection_vol"] = vol
+                st.rerun()
     with text_col:
-        injection_vol = st.text_input("Enter your injection volume (ul)", str(injection_vol))
+        raw_vol = st.text_input("2. Enter your injection volume (ul)", str(st.session_state["xcal_injection_vol"]))
+        try:
+            st.session_state["xcal_injection_vol"] = float(raw_vol)
+        except ValueError:
+            st.warning("Invalid injection volume.")
+    injection_vol = st.session_state["xcal_injection_vol"]
     st.markdown(
         f"Selected injection volume (ul): <span style='color:red'>{injection_vol}</span>",
         unsafe_allow_html=True,
@@ -125,14 +134,6 @@ def render(ms_info: dict, sample_info: dict) -> None:
             ),
         )
         include_qc_between = st.checkbox("Include QC between samples", value=True)
-        qcb_pre = pd.concat(
-            [wash_df, qcb_base.assign(**{"File Name": qcb_base["File Name"] + "_1"})],
-            ignore_index=True,
-        )
-        qcb_post = pd.concat(
-            [qcb_base.assign(**{"File Name": qcb_base["File Name"] + "_2"}), wash_df],
-            ignore_index=True,
-        )
 
     # Randomize and assemble final injection sequence
     st.markdown("### Download data")
@@ -150,6 +151,14 @@ def render(ms_info: dict, sample_info: dict) -> None:
 
     output_with_wash = pd.concat([wash_df, qc_df, output_with_wash, qc_df], ignore_index=True)
     if include_qc_between:
+        qcb_pre = pd.concat(
+            [wash_df, qcb_base.assign(**{"File Name": qcb_base["File Name"] + "_1"})],
+            ignore_index=True,
+        )
+        qcb_post = pd.concat(
+            [qcb_base.assign(**{"File Name": qcb_base["File Name"] + "_2"}), wash_df],
+            ignore_index=True,
+        )
         output_with_wash = pd.concat([qcb_pre, output_with_wash, qcb_post], ignore_index=True)
 
     # Save for downstream tabs

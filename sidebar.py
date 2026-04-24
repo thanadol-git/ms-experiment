@@ -257,7 +257,7 @@ def create_sidebar() -> tuple:
     _upload_settings()
     st.sidebar.header("Sample information")
     st.sidebar.write("This part is needed for every file that we are creating.")
-    ms = ms_info()
     sample = sample_info()
+    ms = ms_info()
     _download_all_button(sample)
     return ms, sample

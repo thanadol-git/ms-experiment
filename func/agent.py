@@ -27,13 +27,12 @@ except ImportError:
 
 
 def _safe_run(coro) -> None:
-    """Run an async coroutine in the current or a new event loop."""
+    """Run an async coroutine in a new event loop."""
+    loop = asyncio.new_event_loop()
     try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    loop.run_until_complete(coro)
+        loop.run_until_complete(coro)
+    finally:
+        loop.close()
 
 
 def init_plate_replace_text(example_text: str) -> None:

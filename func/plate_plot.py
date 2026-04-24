@@ -58,7 +58,7 @@ def _draw_plate(plate_df, plate_id, ax):
     unique_labels = sorted(plate_df.stack().unique())
     palette = dict(zip(unique_labels, sns.color_palette("colorblind", len(unique_labels))))
     if "EMPTY" in palette:
-        palette["EMPTY"] = (1.0, 1.0, 1.0)
+        palette["EMPTY"] = "white"
 
     # Auto-scale font size based on the longest label so text fits inside wells
     max_len = max(len(str(v)) for v in plate_df.values.flatten())
@@ -102,22 +102,6 @@ def _draw_plate(plate_df, plate_id, ax):
                     color=text_color, fontsize=label_fs, zorder=3,
                     fontweight="bold")
 
-    # Legend — placed to the right of the plate
-    legend_handles = [
-        mpatches.Patch(facecolor=palette[lbl], edgecolor="#555555", label=lbl)
-        for lbl in unique_labels
-    ]
-    ax.legend(
-        handles=legend_handles,
-        loc="center left",
-        bbox_to_anchor=(1.01, 0.5),
-        bbox_transform=ax.transAxes,
-        ncol=1,
-        fontsize=label_fs + 2,
-        framealpha=0.85,
-        title=plate_id,
-        title_fontsize=label_fs + 3,
-    )
 
 
 def plate_dfplot(plate_df, plate_id):
