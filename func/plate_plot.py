@@ -149,7 +149,6 @@ def plate_dfplot(plate_df, plate_id):
     ax.set_title(f"{plate_id}", fontsize=title_fs, fontweight="bold")
 
     # Legend — placed to the left of the plate
-    import matplotlib.patches as mpatches
     legend_handles = [
         mpatches.Patch(facecolor=palette[lbl], edgecolor="#555555", label=lbl)
         for lbl in unique_labels
