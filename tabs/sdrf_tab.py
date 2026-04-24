@@ -56,7 +56,7 @@ def render(ms_info: dict, sample_info: dict) -> None:
         [datetime.now().strftime("%Y%m%d"), sample_info["proj_name"], sample_info["plate_id"]],
         ".sdrf.tsv",
     )
-    sdrf_tsv = ensure_bom(sdrf_df.to_csv(sep="\t", index=False, encoding="utf-8-sig"))
+    sdrf_tsv = ensure_bom(sdrf_df.to_csv(sep="\t", index=False))
     for i in range(len(ms_info["enz_accession_list"])):
         sdrf_tsv = sdrf_tsv.replace(
             f"comment[cleavage agent details{i}]", "comment[cleavage agent details]"

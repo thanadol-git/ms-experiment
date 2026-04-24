@@ -78,7 +78,7 @@ def _draw_plate(plate_df, plate_id, ax):
     for i in range(n_rows):
         for j in range(n_cols):
             value = plate_df.iloc[i, j]
-            color = palette.get(value, (1, 1, 1))
+            color = palette.get(value, "white")
             cx = margin_left + j * well_spacing + well_spacing / 2
             cy = plate_h - margin_top - i * well_spacing - well_spacing / 2
 

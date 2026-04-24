@@ -165,7 +165,7 @@ def render(ms_info: dict, sample_info: dict) -> None:
     st.session_state.output_order_df = output_order_df
     st.session_state.xcalibur_plate_df = plate_df_long
 
-    csv_data = ensure_bom("Bracket Type=4,,,,\n" + output_with_wash.to_csv(index=False, encoding="utf-8-sig"))
+    csv_data = ensure_bom("Bracket Type=4,,,,\n" + output_with_wash.to_csv(index=False))
 
     filename = build_download_name(
         [
